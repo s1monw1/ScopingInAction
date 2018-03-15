@@ -1,24 +1,30 @@
 package de.swirtz.kotlin.scoping
 
-import com.google.gson.Gson
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import de.swirtz.demo.scoping.GitHubApiCallerNextGen
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.slf4j.LoggerFactory
 
 const val ENDPOINT = "https://api.github.com/repos/jetbrains/kotlin/contributors"
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class Contributor(val login: String, val contributions: Int)
 
 object GitHubApiCaller {
+    private val LOG = LoggerFactory.getLogger("GitHubApiClient-Logger")
     private val client = OkHttpClient()
-
-    private var cachedLeadResult: Contributor? = null
+    private var cachedLeadResults = mutableMapOf<String, Contributor>()
+    private val mapper = jacksonObjectMapper()
 
     @Synchronized
     fun getKotlinContributor(name: String): Contributor {
+        val cachedLeadResult = cachedLeadResults[name]
         if (cachedLeadResult != null) {
-            println("return cached: $cachedLeadResult")
-            return cachedLeadResult as Contributor
+            LOG.debug("return cached: $cachedLeadResult")
+            return cachedLeadResult
         }
         val request = Request.Builder().url(ENDPOINT).build()
 
@@ -31,15 +37,15 @@ object GitHubApiCaller {
             } else throw IllegalStateException("No response from server!")
         }
 
-        println("response from git api: $responseAsString\n")
+        LOG.debug("response from git api: $responseAsString\n")
 
         val contributors =
-            Gson().fromJson(responseAsString, Array<Contributor>::class.java)
+            mapper.readValue<Array<Contributor>>(responseAsString)
 
 
         val match = contributors.first { it.login == name }
-        this.cachedLeadResult = match
-        println("found kotlin contributor: $match")
+        this.cachedLeadResults[name] = match
+        LOG.debug("found kotlin contributor: $match")
         return match
     }
 }
