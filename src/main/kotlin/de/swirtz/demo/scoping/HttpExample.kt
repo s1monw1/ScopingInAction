@@ -30,17 +30,17 @@ object GitHubApiCaller {
 
         val response = client.newCall(request).execute()
 
-        val responseAsString = response.use {
+        val json = response.use {
             val responseBytes = it.body()?.source()?.readByteArray()
             if (responseBytes != null) {
                 String(responseBytes)
             } else throw IllegalStateException("No response from server!")
         }
 
-        LOG.debug("response from git api: $responseAsString\n")
+        LOG.debug("response from git api: $json\n")
 
         val contributors =
-            mapper.readValue<Array<Contributor>>(responseAsString)
+            mapper.readValue<Array<Contributor>>(json)
 
 
         val match = contributors.first { it.login == name }

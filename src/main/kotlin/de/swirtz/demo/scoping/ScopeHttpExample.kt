@@ -15,6 +15,7 @@ object GitHubApiCallerNextGen {
     private var cachedLeadResults = mutableMapOf<String, Contributor>()
     private val mapper = jacksonObjectMapper()
 
+
     @Synchronized
     fun getKotlinContributor(name: String): Contributor {
         return cachedLeadResults[name]?.also {
@@ -28,12 +29,12 @@ object GitHubApiCallerNextGen {
                 val response =
                     Request.Builder().url(ENDPOINT).build().let { newCall(it).execute() }
 
-                val responseAsString = response.use {
+                val json = response.use {
                     it.body()?.source()?.readByteArray()?.let { String(it) }
                             ?: throw IllegalStateException("No response from server!")
                 }
 
-                responseAsString.let {
+                json.let {
                     LOG.debug("response from git api: $it\n")
                     mapper.readValue<Array<Contributor>>(it)
                 }
