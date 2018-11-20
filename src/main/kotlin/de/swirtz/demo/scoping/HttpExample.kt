@@ -53,4 +53,7 @@ object GitHubApiCaller {
 fun main(args: Array<String>) {
     GitHubApiCaller.getKotlinContributor("abreslav")
     GitHubApiCallerNextGen.getKotlinContributor("abreslav")
+
+
 }
+
